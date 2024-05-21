@@ -7,21 +7,16 @@ const shortid = require('shortid');
 
 require('dotenv').config();
 
-//* Middleware
-
 app.use(cors());
 app.use(express.static('public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-//* MongoDB
-
+//MONGA API CONNECTION
 mongoose.connect(process.env.MONGO_URI, {
 	useNewUrlParser: true,
 	useUnifiedTopology: true,
 });
-
-//* Schemas
 
 const exerciseSchema = new mongoose.Schema({
 	userId: String,
@@ -35,18 +30,12 @@ const userSchema = new mongoose.Schema({
 	username: String,
 });
 
-//* Models
-
 let User = mongoose.model('User', userSchema);
 
 let Exercise = mongoose.model('Exercise', exerciseSchema);
 
-//* Endpoints
+//GET FUNCTIONS FOR ALL
 
-/*
- * GET
- * Delete all users
- */
 app.get('/api/users/delete', function (_req, res) {
 	console.log('### delete all users ###'.toLocaleUpperCase());
 
@@ -62,10 +51,7 @@ app.get('/api/users/delete', function (_req, res) {
 	});
 });
 
-/*
- * GET
- * Delete all exercises
- */
+
 app.get('/api/exercises/delete', function (_req, res) {
 	console.log('### delete all exercises ###'.toLocaleUpperCase());
 
@@ -87,10 +73,6 @@ app.get('/', async (_req, res) => {
 	await Exercise.syncIndexes();
 });
 
-/*
- * GET
- * Get all users
- */
 app.get('/api/users', function (_req, res) {
 	console.log('### get all users ###'.toLocaleUpperCase());
 
@@ -112,16 +94,11 @@ app.get('/api/users', function (_req, res) {
 	});
 });
 
-/*
- * POST
- * Create a new user
- */
 app.post('/api/users', function (req, res) {
 	const inputUsername = req.body.username;
 
 	console.log('### create a new user ###'.toLocaleUpperCase());
 
-	//? Create a new user
 	let newUser = new User({ username: inputUsername });
 
 	console.log(
@@ -138,11 +115,6 @@ app.post('/api/users', function (req, res) {
 	});
 });
 
-/*
- * POST
- * Add a new exercise
- * @param _id
- */
 app.post('/api/users/:_id/exercises', function (req, res) {
 	var userId = req.params._id;
 	var description = req.body.description;
@@ -151,7 +123,6 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 
 	console.log('### add a new exercise ###'.toLocaleUpperCase());
 
-	//? Check for date
 	if (!date) {
 		date = new Date().toISOString().substring(0, 10);
 	}
@@ -160,14 +131,12 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 		'looking for user with id ['.toLocaleUpperCase() + userId + '] ...'
 	);
 
-	//? Find the user
 	User.findById(userId, (err, userInDb) => {
 		if (err) {
 			console.error(err);
 			res.json({ message: 'There are no users with that ID in the database!' });
 		}
 
-		//* Create new exercise
 		let newExercise = new Exercise({
 			userId: userInDb._id,
 			username: userInDb.username,
@@ -193,11 +162,6 @@ app.post('/api/users/:_id/exercises', function (req, res) {
 	});
 });
 
-/*
- * GET
- * Get a user's exercise log
- * @param _id
- */
 app.get('/api/users/:_id/logs', async function (req, res) {
 	const userId = req.params._id;
 	const from = req.query.from || new Date(0).toISOString().substring(0, 10);
@@ -207,14 +171,12 @@ app.get('/api/users/:_id/logs', async function (req, res) {
 
 	console.log('### get the log from a user ###'.toLocaleUpperCase());
 
-	//? Find the user
 	let user = await User.findById(userId).exec();
 
 	console.log(
 		'looking for exercises with id ['.toLocaleUpperCase() + userId + '] ...'
 	);
 
-	//? Find the exercises
 	let exercises = await Exercise.find({
 		userId: userId,
 		date: { $gte: from, $lte: to },
@@ -239,6 +201,8 @@ app.get('/api/users/:_id/logs', async function (req, res) {
 	});
 });
 
+
+//PORT LISTENERS
 const listener = app.listen(process.env.PORT || 3000, () => {
 	console.log('Your app is listening on port ' + listener.address().port);
 });
